@@ -4,9 +4,12 @@ namespace Drupal\site_location\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\site_location\CurrentTimeBasedOnTimeZone;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Session\AccountProxy;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
+use Drupal\Core\Extension\ModuleHandler;
 
 /**
  * Provides a 'Site Location Block' Block.
@@ -17,15 +20,48 @@ use Drupal\Core\Cache\Cache;
  *   category = @Translation("Site Location"),
  * )
  */
-class SiteLocationBlock extends BlockBase {
+class SiteLocationBlock extends BlockBase implements ContainerFactoryPluginInterface {
+
+    /** Custom service
+     * 
+     * @var Drupal\site_location\CurrentTimeBasedOnTimeZone
+     */
+    protected $currentTimeBasedOnTimeZone;
+
+    /** The current user
+     * 
+     * @var \Drupal\Core\Session\AccountProxyInterface
+     */
+    protected $currentUser;
+
+    /**
+     * The kill switch.
+     *
+     * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
+     */
+    protected $killSwitch;
+
+    /** The Module Handler.
+     *
+     * @var \Drupal\Core\Extension\ModuleHandler
+     */
+    protected $moduleHandler;
 
     /**
      * Class constructor
      */
-    Protected $currentTimeBasedOnTimeZone;
+    public function __construct(array $configuration, $plugin_id, $plugin_definition, AccountProxy $currentUser, KillSwitch $killSwitch, ModuleHandler $moduleHandler, CurrentTimeBasedOnTimeZone $currentTimeBasedOnTimeZone) {
+        $this->currentTimeBasedOnTimeZone = $currentTimeBasedOnTimeZone;
+        $this->currentUser = $currentUser;
+        $this->killSwitch = $killSwitch;
+        $this->moduleHandler = $moduleHandler;
+    }
 
-    public function __construct() {
-        $this->currentTimeBasedOnTimeZone = \Drupal::service('site_location.currenttime');
+    public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+
+        return new static(
+                $configuration, $plugin_id, $plugin_definition, $container->get('current_user'), $container->get('page_cache_kill_switch'), $container->get('module_handler'), $container->get('site_location.currenttime')
+        );
     }
 
     /**
@@ -34,23 +70,14 @@ class SiteLocationBlock extends BlockBase {
     public function build() {
 
         $siteLocationDetailsArr = $this->currentTimeBasedOnTimeZone->siteLocationAndCurentTime();
-        $country = $siteLocationDetailsArr['country'];
-        $city = $siteLocationDetailsArr['city'];
-        $date = $siteLocationDetailsArr['date'];
-        $html = "<div>";
-        if(!empty($country)){
-            $html .= "<h2>$country</h2>";
+        if ($this->currentUser->isAnonymous() && $this->moduleHandler->moduleExists('page_cache')) {
+            $this->killSwitch->trigger();
         }
-        if(!empty($city)){
-            $html .= "<h3>$city</h3>";
-        }
-        
-        $html .= "<h4>$date</h4>";
-        $html .= "</div>";
-
         $build['current_time'] = [
-            '#markup' => $html
+            '#theme' => 'block--sitelocationblock',
+            '#data' => $siteLocationDetailsArr,
         ];
+
         return $build;
     }
 
