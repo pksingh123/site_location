@@ -9,7 +9,8 @@ use Drupal\Component\Datetime\TimeInterface;
 class SiteLocationCacheContext implements CacheContextInterface {
 
     /**
-     * @var \Drupal\Core\Session\AccountProxyInterface
+     * The datetime.time service
+     * @var \Drupal\Component\Datetime\TimeInterface
      */
     protected $timeService;
 
