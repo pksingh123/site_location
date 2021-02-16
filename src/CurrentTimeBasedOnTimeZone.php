@@ -50,7 +50,7 @@ class CurrentTimeBasedOnTimeZone {
         $config = $this->configFactory->get('site_location.settings');
         $siteLocationDetailsArr['country'] = $config->get('country.default');
         $siteLocationDetailsArr['city'] = $config->get('city.default');
-        $time_zone = $config->get('timezone.default');
+        $time_zone = $config->get('timezone.default')? : date_default_timezone_get();
         $date = $this->dateFormat->format($this->timeService->getRequestTime(), 'custom', 'dS M Y - H:i A', $time_zone);
         $siteLocationDetailsArr['date'] = $date;
         return $siteLocationDetailsArr;
