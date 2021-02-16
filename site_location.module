@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Implements hook_theme()
+ */
+
+function site_location_theme($existing, $type, $theme, $path) {
+  return array('block--sitelocationblock' =>                  
+           array(
+            'variables' => array(
+                'data' => array(),
+            ),
+        )
+    );
+}
