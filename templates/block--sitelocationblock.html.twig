@@ -1,5 +1,9 @@
 <div class="block-data">
-    <h2>{{data.country}}</h2>
-    <h3>{{data.city}}</h3>
+    {% if data.country %}
+        <h2>{{data.country}}</h2>
+    {% endif %}
+    {% if data.city %}
+        <h3>{{data.city}}</h3>
+    {% endif %}
     <h4>{{data.date}}</h4>
 </div>
